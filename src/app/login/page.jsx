@@ -20,10 +20,13 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials:"include",
+        credentials: "include",
       });
-
+      console.log("Login response headers:", [...res.headers]);
       const data = await res.json();
+      console.log("Login response data:", data);
+
+      // const data = await res.json();
 
       if (res.ok && data.success) {
         router.push("/dashboard");
