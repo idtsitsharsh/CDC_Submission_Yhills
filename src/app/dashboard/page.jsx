@@ -1,92 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
-import CourseCard from "./components/CourseCard";
-import EditCourseForm from "./components/EditCourseForm";
-import AddCourseForm from "./components/AddCourseForm";
-import AdminSection from "./AdminSection";
-
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import Sidebar from "@/components/dashboard/Sidebar";
+import AddCourseWizard from "@/components/dashboard/add-course/AddCourseWizard";
+import EditCoursePage from "@/components/dashboard/edit-course/EditCoursePage";
+import AdminKeysPanel from "./components/AdminKeysPanel";
+import DashboardCharts from "@/components/dashboard/DashboardCharts";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingCourse, setEditingCourse] = useState(null);
-
+  const [activeTab, setActiveTab] = useState("overview");
+  const [currentAdmin, setCurrentAdmin] = useState(null); 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if(!token){
-      router.push("/login");
-      return;
-    }   
-    
-    fetch("/api/admin/courses" , {
-      headers:{
-        Authorization:`Bearer ${token}`,
-      }
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setCourses(data.courses);
-        setLoading(false);
+    fetch("/api/admin/check")
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          router.push("/login"); 
+        } else {
+          setCurrentAdmin(data.admin); 
+        }
       })
-      .catch(() =>{
-        router.push("/login");
-      });
+      .catch(() => router.push("/login")); 
   }, [router]);
-
-  function handleDeleted(courseId) {
-    setCourses(courses.filter((c) => c._id !== courseId));
-  }
-
-  const handleUpdated = (updatedCourse) => {
-    setCourses(courses.map(c => c._id === updatedCourse._id ? updatedCourse : c));
-  };
-
-  const handleAdded = (newCourse) => {
-    setCourses([...courses, newCourse]);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    router.push("/login");
-  };
-
   return (
-    <main style={{ padding: "2rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Admin Dashboard</h1>
-        <button onClick={handleLogout} style={{ height: "40px" }}>
-          Logout
-        </button>
-      </div>
-      <section>
-        <h2>Add New Course</h2>
-        <AddCourseForm onAdded={handleAdded} />
-      </section>
-
-      {loading ? (
-        <p>Loading courses...</p>
-      ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "2rem" }}>
-          {courses.map((course) => (
-            <div key={course._id}>
-              <CourseCard course={course} onDeleted={handleDeleted}/>
-              <button onClick={() => setEditingCourse(course)}>Edit</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {editingCourse && (
-        <EditCourseForm
-            course={editingCourse}
-            onUpdated={handleUpdated}
-            onCancel={() => setEditingCourse(null)}
-        />
-        )}
-      <AdminSection />
-    </main>
+    <DashboardLayout
+      sidebar={
+        <Sidebar active={activeTab} onChange={setActiveTab} />
+      }
+    >
+      {activeTab === "overview" && <Overview />}
+      {activeTab === "add-course" && <AddCourseWizard />}
+      {activeTab === "edit-course" && <EditCoursePage />}
+      {/* {console.log(currentAdmin)} */}
+      {activeTab === "admin" && <AdminKeysPanel currentAdmin={currentAdmin}/>}
+    </DashboardLayout>
   );
 }
+
+/* ---------- TEMP COMPONENTS ---------- */
+
+function Overview() {
+  return (
+    <>
+      <h1 className="page-title">Overview</h1>
+
+      <div className="stats-grid">
+        <StatCard title="Total Revenue" value="$48,920" />
+        <StatCard title="Courses Sold" value="1,284" />
+        <StatCard title="Active Students" value="3,912" />
+      </div>
+      <div style={{ marginTop: "2rem" }}>
+        <DashboardCharts />
+      </div>
+    </>
+  );
+}
+
+function StatCard({ title, value }) {
+  return (
+    <div className="stat-card">
+      <p className="stat-title">{title}</p>
+      <h3 className="stat-value">{value}</h3>
+    </div>
+  );
+}
+
+// function Placeholder({ title }) {
+//   return (
+//     <>
+//       <h1 className="page-title">{title}</h1>
+//       <p style={{ color: "#6b7280" }}>
+//         UI coming in next steps…
+//       </p>
+//     </>
+//   );
+// }

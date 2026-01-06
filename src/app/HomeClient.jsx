@@ -18,17 +18,20 @@ export default function HomeClient({ courses }) {
 
   return (
     <>
-      <DepartmentFilter
-        departments={departments}
-        value={department}
-        onChange={setDepartment}
-      />
+      <div className="filter-bar">
+        <DepartmentFilter
+          departments={departments}
+          value={department}
+          onChange={setDepartment}
+        />
+      </div>
 
-      <div className="flex flex-wrap gap-6">
-        {filteredCourses.map((course) => (
+      <div className="course-grid">
+        {filteredCourses.map(course => (
           <CourseCard key={course._id} course={course} />
         ))}
       </div>
     </>
+
   );
 }

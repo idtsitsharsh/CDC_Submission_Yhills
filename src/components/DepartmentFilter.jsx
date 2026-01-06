@@ -5,7 +5,7 @@ export default function DepartmentFilter({ departments, value, onChange }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="border px-3 py-2 rounded mb-6"
+      className="filter-select"
     >
       <option value="ALL">All Departments</option>
       {departments.map((dept) => (

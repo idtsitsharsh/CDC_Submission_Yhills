@@ -1,84 +1,130 @@
 import connectDB from "@/lib/db";
 import Course from "@/models/Course";
 import mongoose from "mongoose";
-// import fs from "fs";
-// import path from "path";
+import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { validate, validationError } from "@/lib/validators/validate";
+// import { NEXT_BODY_SUFFIX } from "next/dist/lib/constants";
+
+const CourseSchema = z.object({
+  title: z.string().min(3),
+  department: z.string().min(2),
+
+  instructors: z.array(z.string()).optional().default([]),
+
+  thumbnail: z.string().url().optional(),
+  description: z.string().optional(),
+
+  language: z.array(z.string()).optional().default([]),
+
+  curriculum: z.array(
+    z.object({
+      title: z.string(),
+      sessions: z.array(
+        z.object({
+          title: z.string(),
+          type: z.enum(["video", "blog"]),
+          duration: z.number().min(0),
+        })
+      ).optional().default([]),
+    })
+  ).optional().default([]),
+
+  price: z.number().nonnegative().optional(),
+});
+
+function verifyTokenFromCookie(req) {
+  const token = req.cookies.get("token")?.value;
+
+  if (!token) throw new Error("Unauthorized");
+
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    throw new Error("Invalid token");
+  }
+}
 
 export async function GET(req, { params }) {
-  const { id } = params;
+  try {
+    verifyTokenFromCookie(req);
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return Response.json(
-      { message: "Invalid course ID" },
-      { status: 400 }
-    );
+    const { id } = params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ message: "Invalid course ID" }, { status: 400 });
+    }
+
+    await connectDB();
+
+    const course = await Course.findById(id).lean();
+    if (!course) {
+      return NextResponse.json({ message: "Course not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ course });
+  } catch (err) {
+    return NextResponse.json({ message: err.message }, { status: 401 });
   }
-
-  await connectDB();
-
-  const course = await Course.findById(id).lean();
-  if (!course) {
-    return Response.json(
-      { message: "Course not found" },
-      { status: 404 }
-    );
-  }
-
-  return Response.json({ course });
 }
 
 export async function PUT(req, { params }) {
-  const { id } = await params;
-  const body = await req.json();
+  try {
+    verifyTokenFromCookie(req);
 
-  await connectDB();
+    const { id } = await params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ message: "Invalid course ID" }, { status: 400 });
+    }
 
-  const updated = await Course.findByIdAndUpdate(id, body, {
-    new: true,
-    runValidators: true,
-  });
+    const body = await req.json();
+    console.log("Incoming payload:", JSON.stringify(body, null, 2));
+    // if( body_.id) delete body._id;
+    const parsed = validate(CourseSchema, body);
 
-  return Response.json({ course: updated });
+    if (!parsed.success) {
+      console.log("VALIDATION ERRORS:", parsed.errors);
+      return validationError(parsed.errors);
+    }
+    await connectDB();
+    const { _id, ...updateData } = parsed.data;
+    const updated = await Course.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updated) {
+      return NextResponse.json({ message: "Course not found" }, { status: 404 });
+    }
+    return NextResponse.json({ course: updated });
+  } catch (err) {
+    console.error("PUT ERROR:", err);
+    return NextResponse.json({ message: err.message || "Update failed" }, { status: 401 });
+  }
 }
 
 export async function DELETE(req, { params }) {
   try {
-    console.log("DELETE called"); // 🔹 log when request arrives
-    console.log("Params received:", params); // 🔹 log the params
+    verifyTokenFromCookie(req);
 
     const { id } = await params;
+
     if (!id) {
-      console.log("No ID in params!"); // 🔹 log missing id
-      return new Response(
-        JSON.stringify({ error: "No course ID provided" }),
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "No course ID provided" }, { status: 400 });
     }
 
     await connectDB();
-    console.log("Connected to DB"); // 🔹 check DB connection
 
     const course = await Course.findById(id);
     if (!course) {
-      console.log("Course not found for ID:", id); // 🔹 log not found
-      return new Response(
-        JSON.stringify({ error: "Course not found" }),
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "Course not found" }, { status: 404 });
     }
 
-    console.log("Course found:", course.title);
-
     await Course.findByIdAndDelete(id);
-    console.log("Course deleted:", course._id);
 
-    return new Response(JSON.stringify({ message: "Course deleted" }), {
-      status: 200,
-    });
+    return NextResponse.json({ message: "Course deleted" });
   } catch (err) {
-    console.error("Delete error:", err);
-    return new Response(JSON.stringify({ error: "Delete failed" }), {
-      status: 500,
-    });
+    console.error("DELETE ERROR:", err);
+    return NextResponse.json({ message: err.message || "Delete failed" }, { status: 401 });
   }
 }

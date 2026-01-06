@@ -51,12 +51,13 @@ export default function CourseCard({ course,onDeleted }) {
           try {
             const res = await fetch(`/api/admin/courses/${course._id}`, {
               method: "DELETE",
+              credentials: "include",
             });
             const data = await res.json();
 
             if (res.ok) {
               alert(data.message || "Course deleted");
-              onDeleted(course._id); // Notify parent to remove from UI
+              onDeleted(course._id); 
             } else {
               alert(data.message || "Delete failed");
             }

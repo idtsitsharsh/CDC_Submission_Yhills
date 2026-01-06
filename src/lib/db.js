@@ -1,7 +1,8 @@
+// src/lib/db.js
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-// console.log("MONGODB_URI =", process.env.MONGODB_URI);
+
 if (!MONGODB_URI) {
   throw new Error("Please define MONGODB_URI in .env.local");
 }
@@ -16,7 +17,11 @@ async function connectDB() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI);
+    mongoose.set("strictQuery", true);
+
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      bufferCommands: false,
+    });
   }
 
   cached.conn = await cached.promise;

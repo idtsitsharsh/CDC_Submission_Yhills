@@ -1,4 +1,3 @@
-// src/app/components/CourseImage.jsx
 "use client";
 
 import { useState } from "react";
@@ -6,18 +5,28 @@ import Image from "next/image";
 
 const FALLBACK_IMAGE = "/course-placeholder.jpg";
 
-export default function CourseImage({ src, alt, width = 400, height = 150 }) {
-  const [imgSrc, setImgSrc] = useState(src.trimEnd() || FALLBACK_IMAGE);
+export default function CourseImage({
+  src,
+  alt,
+  variant = "card", // "card" | "detail"
+}) {
+  const safeSrc =
+    typeof src === "string" && src.trim().length > 0
+      ? src.trim()
+      : FALLBACK_IMAGE;
+
+  const [imgSrc, setImgSrc] = useState(safeSrc);
 
   return (
-    <Image
-      src={imgSrc}
-      alt={alt}
-      width={width}
-      height={height}
-      className="w-full h-[150px] object-cover rounded"
-      unoptimized
-      onError={() => setImgSrc(FALLBACK_IMAGE)}
-    />
+    <div className={`course-image-wrapper ${variant}`}>
+      <Image
+        src={imgSrc}
+        alt={alt}
+        fill
+        unoptimized
+        className="course-image"
+        onError={() => setImgSrc(FALLBACK_IMAGE)}
+      />
+    </div>
   );
 }

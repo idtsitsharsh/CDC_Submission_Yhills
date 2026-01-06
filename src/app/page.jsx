@@ -22,9 +22,9 @@ export default async function Home() {
   const courses = await Course.find({}).lean();
   const coursesPlain=courses.map(convertCourseToPlain);
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold mb-2">Courses</h1>
-      <p className="mb-6">Total courses: {courses.length}</p>
+    <main className="container">
+      <h1 className="page-title">Courses</h1>
+      <p className="page-subtitle">Total courses: {courses.length}</p>
 
       <HomeClient courses={coursesPlain} />
     </main>

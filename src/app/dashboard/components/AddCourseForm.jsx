@@ -10,10 +10,9 @@ export default function AddCourseForm({ onAdded }) {
   const [instructors, setInstructors] = useState("");
   const [thumbnail, setThumbnail] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState("");
-  const [price, setPrice] = useState(0); // <-- add this
+  const [price, setPrice] = useState(0);
   const [curriculum, setCurriculum] = useState([]);
 
-  // --- Module handlers ---
   const addModule = () => {
     setCurriculum([...curriculum, { title: "", sessions: [] }]);
   };
@@ -30,14 +29,9 @@ export default function AddCourseForm({ onAdded }) {
     setCurriculum(updated);
   };
 
-  // --- Session handlers ---
   const addSession = (moduleIndex) => {
     const updated = [...curriculum];
-    updated[moduleIndex].sessions.push({
-      title: "",
-      type: "video",
-      duration: 0,
-    });
+    updated[moduleIndex].sessions.push({ title: "", type: "video", duration: 0 });
     setCurriculum(updated);
   };
 
@@ -54,7 +48,6 @@ export default function AddCourseForm({ onAdded }) {
     setCurriculum(updated);
   };
 
-  // --- Submit ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     let finalThumbnail = thumbnail;
@@ -66,22 +59,27 @@ export default function AddCourseForm({ onAdded }) {
       const uploadRes = await fetch("/api/admin/courses/upload", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       const uploadData = await uploadRes.json();
-      console.log("UPLOAD RESPONSE:", uploadData);
-      finalThumbnail = uploadData.path.startsWith("/")
-        ? uploadData.path
-        : `/${uploadData.path}`;
+
+      if (!uploadData.path) {
+        alert("Image upload failed");
+        return;
+      }
+
+      finalThumbnail = uploadData.path; 
     }
+
 
     const newCourse = {
       title,
       department,
       language: language.split(",").map(l => l.trim()).filter(Boolean),
       description,
-      instructors: instructors.split(",").map((i) => i.trim()),
-      thumbnail: finalThumbnail || "", // optional
+      instructors: instructors.split(",").map(i => i.trim()),
+      thumbnail: finalThumbnail || "",
       curriculum,
       price: price || 0,
     };
@@ -89,6 +87,7 @@ export default function AddCourseForm({ onAdded }) {
     const res = await fetch("/api/admin/courses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include", 
       body: JSON.stringify(newCourse),
     });
 
@@ -102,6 +101,7 @@ export default function AddCourseForm({ onAdded }) {
       setDescription("");
       setInstructors("");
       setThumbnail("");
+      setThumbnailFile("");
       setCurriculum([]);
       setPrice(0);
     } else {
@@ -129,73 +129,40 @@ export default function AddCourseForm({ onAdded }) {
       <input value={instructors} onChange={(e) => setInstructors(e.target.value)} required />
 
       <label>Thumbnail URL (optional):</label>
-      <input
-        value={thumbnail}
-        onChange={(e) => setThumbnail(e.target.value)}
-      />
+      <input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} />
 
       <label>OR Upload Image:</label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setThumbnailFile(e.target.files[0])}
-      />
+      <input type="file" accept="image/*" onChange={(e) => setThumbnailFile(e.target.files[0])} />
 
       <label>Price (in USD)</label>
-      <input  type="number"  value={price}  onChange={(e) => setPrice(Number(e.target.value))}  min="0"  placeholder="Enter course price" required/>
+      <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} min="0" placeholder="Enter course price" required/>
 
-      {/* Curriculum */}
       <h4>Curriculum</h4>
-
       {curriculum.map((module, moduleIndex) => (
         <div key={moduleIndex} style={{ border: "1px solid #ddd", padding: "0.5rem", marginBottom: "1rem" }}>
           <label>Module Title:</label>
-          <input
-            value={module.title}
-            onChange={(e) => updateModuleTitle(moduleIndex, e.target.value)}
-            required
-          />
-
-          <button type="button" onClick={() => removeModule(moduleIndex)}>
-            Remove Module
-          </button>
+          <input value={module.title} onChange={(e) => updateModuleTitle(moduleIndex, e.target.value)} required />
+          <button type="button" onClick={() => removeModule(moduleIndex)}>Remove Module</button>
 
           <div style={{ marginLeft: "1rem" }}>
             {module.sessions.map((session, sessionIndex) => (
               <div key={sessionIndex} style={{ border: "1px dashed #ccc", padding: "0.5rem", marginBottom: "0.5rem" }}>
                 <label>Session Title:</label>
-                <input
-                  value={session.title}
-                  onChange={(e) => updateSession(moduleIndex, sessionIndex, "title", e.target.value)}
-                  required
-                />
+                <input value={session.title} onChange={(e) => updateSession(moduleIndex, sessionIndex, "title", e.target.value)} required />
 
                 <label>Type:</label>
-                <select
-                  value={session.type}
-                  onChange={(e) => updateSession(moduleIndex, sessionIndex, "type", e.target.value)}
-                >
+                <select value={session.type} onChange={(e) => updateSession(moduleIndex, sessionIndex, "type", e.target.value)}>
                   <option value="video">Video</option>
                   <option value="blog">Blog</option>
                 </select>
 
                 <label>Duration (minutes):</label>
-                <input
-                  type="number"
-                  value={session.duration}
-                  onChange={(e) => updateSession(moduleIndex, sessionIndex, "duration", e.target.value)}
-                  required
-                />
+                <input type="number" value={session.duration} onChange={(e) => updateSession(moduleIndex, sessionIndex, "duration", e.target.value)} required />
 
-                <button type="button" onClick={() => removeSession(moduleIndex, sessionIndex)}>
-                  Remove Session
-                </button>
+                <button type="button" onClick={() => removeSession(moduleIndex, sessionIndex)}>Remove Session</button>
               </div>
             ))}
-
-            <button type="button" onClick={() => addSession(moduleIndex)}>
-              Add Session
-            </button>
+            <button type="button" onClick={() => addSession(moduleIndex)}>Add Session</button>
           </div>
         </div>
       ))}

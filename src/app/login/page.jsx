@@ -8,69 +8,67 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.success) {
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("adminEmail", data.email);
-      router.push("/dashboard");
-    } else {
-      setError(data.message);
+      if (res.ok && data.success) {
+        router.push("/dashboard");
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <main style={{
-      minHeight: "80vh",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center"
-    }}>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          width: "320px",
-          padding: "2rem",
-          border: "1px solid #ddd",
-          borderRadius: "8px"
-        }}
-      >
-        <h2 style={{ marginBottom: "1rem" }}>Admin Login</h2>
+    <main className="login-page">
+      <form className="login-card" onSubmit={handleSubmit}>
+        <h2 className="login-title">Admin Login</h2>
 
         <input
           type="email"
-          placeholder="Email"
+          className="login-input"
+          placeholder="Admin email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ width: "100%", marginBottom: "1rem", padding: "0.6rem" }}
         />
 
         <input
           type="password"
+          className="login-input"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width: "100%", marginBottom: "1rem", padding: "0.6rem" }}
         />
 
-        <button style={{ width: "100%", padding: "0.6rem" }}>
-          Login
+        <button
+          type="submit"
+          className="login-button"
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
         </button>
 
-        {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
+        {error && <p className="login-error">{error}</p>}
       </form>
     </main>
   );

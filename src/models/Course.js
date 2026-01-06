@@ -16,14 +16,14 @@ const CourseSchema = new mongoose.Schema(
     title: { type: String, required: true },
     department: { type: String, required: true },
 
-    description: { type: String },              // ✅ added
-    language: [{ type: String }],               // ✅ added
+    description: { type: String },             
+    language: [{ type: String }],               
 
     instructors: [{ type: String }],
 
     thumbnail: {
       type: String,
-      default: "",                               // ✅ optional image
+      default: "",                               
     },
 
     curriculum: [ModuleSchema],

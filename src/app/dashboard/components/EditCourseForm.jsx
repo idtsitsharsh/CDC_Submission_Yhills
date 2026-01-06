@@ -67,7 +67,8 @@ export default function EditCourseForm({ course, onUpdated, onCancel }) {
 
       const uploadRes = await fetch("/api/admin/courses/upload", {
         method: "POST",
-        body: formData,
+        body: formData, 
+        credentials: "include",
       });
 
       const uploadData = await uploadRes.json();
@@ -79,7 +80,7 @@ export default function EditCourseForm({ course, onUpdated, onCancel }) {
       description,
       language: language.split(",").map(l => l.trim()).filter(Boolean),
       instructors: instructors.split(",").map((i) => i.trim()),
-      thumbnail: finalThumbnail || "", // optional
+      thumbnail: finalThumbnail || "", 
       curriculum,
       price:price||0,
     };
@@ -89,13 +90,14 @@ export default function EditCourseForm({ course, onUpdated, onCancel }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedCourse),
+        credentials: "include",
       });
 
       const data = await res.json();
 
       if (data.course) {
         onUpdated(data.course);
-        onCancel(); // ✅ CLOSE editor after save
+        onCancel(); 
       } else {
         alert(data.message || "Update failed");
       }

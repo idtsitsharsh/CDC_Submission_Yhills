@@ -1,21 +1,35 @@
+// middleware.js
+// console.log("🔥 MIDDLEWARE HIT:", req.nextUrl.pathname);
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
 export function middleware(req) {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  const { pathname } = req.nextUrl;
+
+  const token = req.cookies.get("token")?.value;
 
   if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (pathname.startsWith("/api")) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const loginUrl = new URL("/login", req.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   try {
     jwt.verify(token, process.env.JWT_SECRET);
     return NextResponse.next();
-  } catch {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  } catch (error) {
+    const response = NextResponse.redirect(new URL("/login", req.url));
+    response.cookies.delete("token");
+    return response;
   }
 }
 
 export const config = {
-  matcher: ["/api/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/api/admin/:path*"],
 };
