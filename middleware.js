@@ -1,32 +1,25 @@
-// middleware.js
-// console.log("🔥 MIDDLEWARE HIT:", req.nextUrl.pathname);
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
 export function middleware(req) {
   const { pathname } = req.nextUrl;
+  if (pathname === "/api/admin/login") {
+    return NextResponse.next();
+  }
 
   const token = req.cookies.get("token")?.value;
 
   if (!token) {
-    if (pathname.startsWith("/api")) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const loginUrl = new URL("/login", req.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
     jwt.verify(token, process.env.JWT_SECRET);
     return NextResponse.next();
-  } catch (error) {
-    const response = NextResponse.redirect(new URL("/login", req.url));
-    response.cookies.delete("token");
-    return response;
+  } catch {
+    const res = NextResponse.redirect(new URL("/login", req.url));
+    res.cookies.delete("token");
+    return res;
   }
 }
 
@@ -37,4 +30,3 @@ export const config = {
     "/api/admin/courses/:path*",
   ],
 };
-
