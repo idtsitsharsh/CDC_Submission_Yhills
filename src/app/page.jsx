@@ -25,7 +25,7 @@ export default async function Home() {
     <main className="container">
       <h1 className="page-title">Courses</h1>
       <p className="page-subtitle">Total courses: {courses.length}</p>
-      {console.log("Hey Logs are working!!")}
+      {/* {console.log("Hey Logs are working!!")} */}
       <HomeClient courses={coursesPlain} />
     </main>
   );
