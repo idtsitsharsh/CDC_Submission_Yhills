@@ -14,7 +14,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [currentAdmin, setCurrentAdmin] = useState(null); 
   useEffect(() => {
-    fetch("/api/admin/check")
+    fetch("/api/admin/check", {
+      credentials: "include",
+    })
       .then(res => res.json())
       .then(data => {
         if (!data.success) {
